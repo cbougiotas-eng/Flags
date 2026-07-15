@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Flag Passport</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#16283D; --navy-panel:#0F1E30; --navy-line:#3A4E63;
+    --cream:#F3E9D2; --gold:#C6A15B; --ink:#EADFC5;
+    --muted:#8FA0B3; --red:#A63D40; --green:#3F6844;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--navy); color:var(--ink);
+    font-family:'IBM Plex Sans',sans-serif; min-height:100vh;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:40px 16px 80px;}
+  .eyebrow{
+    text-align:center; color:var(--gold); font-size:12px;
+    letter-spacing:.3em; text-transform:uppercase;
+  }
+  h1{
+    text-align:center; font-family:'Fraunces',serif; color:var(--cream);
+    font-size:40px; font-weight:600; margin:4px 0 0;
+  }
+  .tabs{display:flex; justify-content:center; gap:8px; margin:28px 0 36px;}
+  .tab{
+    padding:8px 24px; border-radius:999px; font-size:14px; font-weight:600;
+    background:transparent; color:var(--muted); border:1px solid var(--navy-line);
+    cursor:pointer; font-family:'IBM Plex Sans',sans-serif; transition:all .15s;
+  }
+  .tab.active{background:var(--cream); color:var(--navy); border-color:var(--cream);}
+
+  /* --- Flashcards --- */
+  .chips{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:20px;}
+  .chip{
+    padding:6px 16px; border-radius:999px; font-size:13px; cursor:pointer;
+    border:1px solid var(--navy-line); background:transparent; color:var(--ink);
+    font-family:'IBM Plex Sans',sans-serif;
+  }
+  .chip.active{background:var(--gold); border-color:var(--gold); color:var(--navy);}
+  .hint{text-align:center; color:var(--muted); font-size:13px; margin-bottom:20px;}
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:14px;
+  }
+  .card{
+    height:108px; perspective:800px; cursor:pointer; background:none; border:none; padding:0;
+  }
+  .card-inner{
+    position:relative; width:100%; height:100%; transition:transform .5s;
+    transform-style:preserve-3d;
+  }
+  .card.flipped .card-inner{transform:rotateY(180deg);}
+  .card-face{
+    position:absolute; inset:0; border-radius:8px; backface-visibility:hidden;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .card-front{background:var(--navy-panel); border:1px solid var(--navy-line);}
+  .card-front img{width:100%; height:100%; object-fit:cover;}
+  .card-front .emoji-flag{font-size:64px; line-height:1;}
+  .card-back{
+    background:var(--cream); border:1px solid var(--gold); transform:rotateY(180deg);
+    flex-direction:column; text-align:center; padding:6px;
+  }
+  .card-back .name{
+    font-family:'Fraunces',serif; font-weight:600; font-size:17px; line-height:1.2;
+    color:var(--navy);
+  }
+  .card-back .continent{
+    font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--red);
+    margin-top:4px; font-family:'IBM Plex Sans',sans-serif;
+  }
+
+  /* --- Quiz --- */
+  .quiz-wrap{max-width:420px; margin:0 auto;}
+  .diff-card{
+    display:block; width:100%; text-align:left; border-radius:10px; padding:16px 20px;
+    background:var(--navy-panel); border:1px solid var(--navy-line); margin-bottom:12px;
+    cursor:pointer; color:var(--ink);
+  }
+  .diff-card:hover{transform:scale(1.02);}
+  .diff-top{display:flex; justify-content:space-between; align-items:baseline;}
+  .diff-title{font-family:'Fraunces',serif; font-size:20px; color:var(--ink);}
+  .diff-count{color:var(--gold); font-size:12px;}
+  .diff-desc{color:var(--muted); font-size:13px; margin-top:4px;}
+  .quiz-meta{display:flex; justify-content:space-between; font-size:13px; color:var(--muted); margin-bottom:12px;}
+  .progress{width:100%; height:4px; border-radius:999px; background:#1C3049; margin-bottom:24px;}
+  .progress-bar{height:4px; border-radius:999px; background:var(--gold); transition:width .3s;}
+  .flag-box{
+    border-radius:12px; margin-bottom:24px; overflow:hidden; display:flex;
+    align-items:center; justify-content:center; height:200px;
+    background:var(--navy-panel); border:1px solid var(--navy-line);
+  }
+  .flag-box img{max-height:100%; max-width:100%; object-fit:contain;}
+  .flag-box .emoji-flag{font-size:150px; line-height:1;}
+  .option{
+    display:block; width:100%; text-align:left; border-radius:8px; padding:12px 16px;
+    background:var(--navy-panel); border:1px solid var(--navy-line); color:var(--ink);
+    font-size:15px; margin-bottom:12px; cursor:pointer; font-family:'IBM Plex Sans',sans-serif;
+  }
+  .option.correct{background:var(--green); border-color:var(--green); color:var(--cream);}
+  .option.wrong{background:var(--red); border-color:var(--red); color:var(--cream);}
+  .option.dim{color:#5B6F84;}
+  .result-panel{
+    border-radius:12px; padding:40px 32px; margin-bottom:24px; text-align:center;
+    background:var(--navy-panel); border:1px solid var(--gold);
+  }
+  .result-label{color:var(--muted); font-size:12px; letter-spacing:.15em; text-transform:uppercase;}
+  .result-score{font-family:'Fraunces',serif; font-size:56px; color:var(--cream); margin-top:8px;}
+  .result-sub{color:var(--gold); font-size:14px; margin-top:4px;}
+  .btn-row{display:flex; gap:12px; justify-content:center;}
+  .btn-primary{
+    padding:10px 20px; border-radius:999px; background:var(--gold); color:var(--navy);
+    font-weight:600; border:none; cursor:pointer; font-family:'IBM Plex Sans',sans-serif;
+  }
+  .btn-secondary{
+    padding:10px 20px; border-radius:999px; background:transparent; color:var(--ink);
+    border:1px solid var(--navy-line); cursor:pointer; font-family:'IBM Plex Sans',sans-serif;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">World Atlas</div>
+  <h1>Flag Passport</h1>
+  <div class="tabs">
+    <button class="tab active" id="tab-flashcards">Flashcards</button>
+    <button class="tab" id="tab-quiz">Quiz</button>
+  </div>
+  <div id="view"></div>
+</div>
+
+<script>
+/* ---------------- Data ---------------- */
+const RAW = [["us","United States","Americas",1],["ca","Canada","Americas",1],["mx","Mexico","Americas",1],["br","Brazil","Americas",1],["ar","Argentina","Americas",1],["cl","Chile","Americas",2],["co","Colombia","Americas",2],["pe","Peru","Americas",2],["ve","Venezuela","Americas",2],["ec","Ecuador","Americas",2],["bo","Bolivia","Americas",2],["py","Paraguay","Americas",3],["uy","Uruguay","Americas",2],["gy","Guyana","Americas",3],["sr","Suriname","Americas",3],["cu","Cuba","Americas",1],["jm","Jamaica","Americas",1],["ht","Haiti","Americas",2],["do","Dominican Republic","Americas",2],["pa","Panama","Americas",2],["cr","Costa Rica","Americas",2],["ni","Nicaragua","Americas",2],["hn","Honduras","Americas",2],["sv","El Salvador","Americas",2],["gt","Guatemala","Americas",2],["bz","Belize","Americas",3],["bs","Bahamas","Americas",2],["tt","Trinidad and Tobago","Americas",3],["bb","Barbados","Americas",3],["gb","United Kingdom","Europe",1],["fr","France","Europe",1],["de","Germany","Europe",1],["it","Italy","Europe",1],["es","Spain","Europe",1],["pt","Portugal","Europe",1],["nl","Netherlands","Europe",1],["be","Belgium","Europe",1],["ch","Switzerland","Europe",1],["at","Austria","Europe",1],["se","Sweden","Europe",1],["no","Norway","Europe",1],["dk","Denmark","Europe",1],["fi","Finland","Europe",1],["ie","Ireland","Europe",1],["pl","Poland","Europe",1],["gr","Greece","Europe",1],["cz","Czechia","Europe",2],["hu","Hungary","Europe",2],["ro","Romania","Europe",2],["bg","Bulgaria","Europe",2],["hr","Croatia","Europe",2],["rs","Serbia","Europe",2],["si","Slovenia","Europe",2],["sk","Slovakia","Europe",2],["ua","Ukraine","Europe",1],["by","Belarus","Europe",2],["lt","Lithuania","Europe",2],["lv","Latvia","Europe",2],["ee","Estonia","Europe",2],["is","Iceland","Europe",2],["lu","Luxembourg","Europe",2],["mt","Malta","Europe",2],["cy","Cyprus","Europe",2],["al","Albania","Europe",2],["mk","North Macedonia","Europe",3],["me","Montenegro","Europe",3],["ba","Bosnia and Herzegovina","Europe",3],["md","Moldova","Europe",3],["li","Liechtenstein","Europe",3],["mc","Monaco","Europe",3],["sm","San Marino","Europe",3],["va","Vatican City","Europe",3],["ad","Andorra","Europe",3],["ru","Russia","Europe",1],["cn","China","Asia",1],["jp","Japan","Asia",1],["kr","South Korea","Asia",1],["in","India","Asia",1],["id","Indonesia","Asia",1],["th","Thailand","Asia",1],["vn","Vietnam","Asia",1],["ph","Philippines","Asia",1],["my","Malaysia","Asia",1],["sg","Singapore","Asia",1],["mm","Myanmar","Asia",2],["kh","Cambodia","Asia",2],["la","Laos","Asia",3],["bd","Bangladesh","Asia",2],["pk","Pakistan","Asia",1],["np","Nepal","Asia",2],["lk","Sri Lanka","Asia",2],["bt","Bhutan","Asia",3],["mv","Maldives","Asia",3],["af","Afghanistan","Asia",2],["ir","Iran","Asia",1],["iq","Iraq","Asia",1],["sa","Saudi Arabia","Asia",1],["ae","United Arab Emirates","Asia",1],["qa","Qatar","Asia",2],["kw","Kuwait","Asia",2],["bh","Bahrain","Asia",3],["om","Oman","Asia",2],["ye","Yemen","Asia",2],["jo","Jordan","Asia",2],["lb","Lebanon","Asia",2],["sy","Syria","Asia",2],["il","Israel","Asia",1],["ps","Palestine","Asia",2],["tr","Turkey","Asia",1],["ge","Georgia","Asia",3],["am","Armenia","Asia",3],["az","Azerbaijan","Asia",3],["kz","Kazakhstan","Asia",2],["uz","Uzbekistan","Asia",3],["tm","Turkmenistan","Asia",3],["tj","Tajikistan","Asia",3],["kg","Kyrgyzstan","Asia",3],["mn","Mongolia","Asia",2],["kp","North Korea","Asia",1],["tw","Taiwan","Asia",1],["bn","Brunei","Asia",3],["tl","Timor-Leste","Asia",3],["eg","Egypt","Africa",1],["za","South Africa","Africa",1],["ng","Nigeria","Africa",1],["ke","Kenya","Africa",1],["et","Ethiopia","Africa",2],["gh","Ghana","Africa",2],["tz","Tanzania","Africa",2],["ug","Uganda","Africa",2],["dz","Algeria","Africa",2],["ma","Morocco","Africa",1],["tn","Tunisia","Africa",2],["ly","Libya","Africa",2],["sd","Sudan","Africa",2],["ss","South Sudan","Africa",3],["cm","Cameroon","Africa",2],["ci","Ivory Coast","Africa",2],["sn","Senegal","Africa",2],["ml","Mali","Africa",3],["ne","Niger","Africa",3],["td","Chad","Africa",3],["bf","Burkina Faso","Africa",3],["bj","Benin","Africa",3],["tg","Togo","Africa",3],["gn","Guinea","Africa",3],["gw","Guinea-Bissau","Africa",3],["sl","Sierra Leone","Africa",3],["lr","Liberia","Africa",3],["mr","Mauritania","Africa",3],["gm","Gambia","Africa",3],["cv","Cape Verde","Africa",3],["cg","Republic of the Congo","Africa",3],["cd","DR Congo","Africa",2],["ga","Gabon","Africa",3],["gq","Equatorial Guinea","Africa",3],["cf","Central African Republic","Africa",3],["ao","Angola","Africa",2],["zm","Zambia","Africa",2],["zw","Zimbabwe","Africa",2],["mz","Mozambique","Africa",2],["mw","Malawi","Africa",3],["na","Namibia","Africa",2],["bw","Botswana","Africa",2],["ls","Lesotho","Africa",3],["sz","Eswatini","Africa",3],["mg","Madagascar","Africa",2],["mu","Mauritius","Africa",3],["sc","Seychelles","Africa",3],["km","Comoros","Africa",3],["dj","Djibouti","Africa",3],["so","Somalia","Africa",2],["er","Eritrea","Africa",3],["rw","Rwanda","Africa",2],["bi","Burundi","Africa",3],["au","Australia","Oceania",1],["nz","New Zealand","Oceania",1],["fj","Fiji","Oceania",2],["pg","Papua New Guinea","Oceania",2],["sb","Solomon Islands","Oceania",3],["vu","Vanuatu","Oceania",3],["ws","Samoa","Oceania",3],["to","Tonga","Oceania",3],["ki","Kiribati","Oceania",3],["fm","Micronesia","Oceania",3],["mh","Marshall Islands","Oceania",3],["pw","Palau","Oceania",3],["nr","Nauru","Oceania",3],["tv","Tuvalu","Oceania",3]];
+const COUNTRIES = RAW.map(([code,name,continent,tier]) => ({code,name,continent,tier}));
+const CONTINENTS = ["All","Europe","Asia","Africa","Americas","Oceania"];
+
+function flagUrl(code, w){ return `https://flagcdn.com/w${w||320}/${code}.png`; }
+function flagEmoji(code){
+  return code.toUpperCase().split("").map(ch => String.fromCodePoint(0x1F1E6 + (ch.charCodeAt(0)-65))).join("");
+}
+function shuffle(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function pick(arr,n){ return shuffle(arr).slice(0,n); }
+
+/* ---------------- Flag element with fallback ---------------- */
+function flagInner(code, imgWidth, emojiSize){
+  const id = 'flag-' + code + '-' + Math.random().toString(36).slice(2,8);
+  return `<img id="${id}" src="${flagUrl(code, imgWidth)}" alt=""
+            onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'emoji-flag',style:'font-size:${emojiSize}px',textContent:'${flagEmoji(code)}'}))" />`;
+}
+
+/* ---------------- State ---------------- */
+let mode = "flashcards";
+let continentFilter = "All";
+let flippedSet = new Set();
+
+let quizState = null; // { diffKey, question, options, selected, score, round, streak, best }
+const TOTAL_Q = 10;
+const DIFFICULTIES = [
+  {key:"easy", label:"Easy", tiers:[1], smart:false, desc:"Famous flags only", count:"~40 flags"},
+  {key:"medium", label:"Medium", tiers:[1,2], smart:true, desc:"Wider world, closer options", count:"~110 flags"},
+  {key:"hard", label:"Hard", tiers:[1,2,3], smart:true, desc:"Every flag, tricky look-alikes", count:"189 flags"},
+];
+
+function buildQuestion(diffKey){
+  const diff = DIFFICULTIES.find(d => d.key === diffKey);
+  const pool = COUNTRIES.filter(c => diff.tiers.includes(c.tier));
+  const answer = pick(pool,1)[0];
+  let distractorPool = pool.filter(c => c.code !== answer.code);
+  if(diff.smart){
+    const sameContinent = distractorPool.filter(c => c.continent === answer.continent);
+    if(sameContinent.length >= 3) distractorPool = sameContinent;
+  }
+  const distractors = pick(distractorPool,3);
+  const options = shuffle([answer, ...distractors]);
+  return {answer, options};
+}
+
+/* ---------------- Render: Flashcards ---------------- */
+function renderFlashcards(){
+  const pool = continentFilter === "All" ? COUNTRIES : COUNTRIES.filter(c => c.continent === continentFilter);
+  const chips = CONTINENTS.map(c =>
+    `<button class="chip ${c===continentFilter?'active':''}" data-continent="${c}">${c}</button>`
+  ).join("");
+  const cards = pool.map(c => {
+    const flipped = flippedSet.has(c.code);
+    return `
+      <button class="card ${flipped?'flipped':''}" data-code="${c.code}" aria-label="Flag card for ${c.name}">
+        <div class="card-inner">
+          <div class="card-face card-front">${flagInner(c.code, 320, 64)}</div>
+          <div class="card-face card-back">
+            <div class="name">${c.name}</div>
+            <div class="continent">${c.continent}</div>
+          </div>
+        </div>
+      </button>`;
+  }).join("");
+
+  document.getElementById("view").innerHTML = `
+    <div class="chips">${chips}</div>
+    <p class="hint">${pool.length} flags &middot; tap a card to reveal the country</p>
+    <div class="grid">${cards}</div>
+  `;
+
+  document.querySelectorAll(".chip").forEach(el => {
+    el.addEventListener("click", () => {
+      continentFilter = el.dataset.continent;
+      renderFlashcards();
+    });
+  });
+  document.querySelectorAll(".card").forEach(el => {
+    el.addEventListener("click", () => {
+      const code = el.dataset.code;
+      flippedSet.has(code) ? flippedSet.delete(code) : flippedSet.add(code);
+      el.classList.toggle("flipped");
+    });
+  });
+}
+
+/* ---------------- Render: Quiz ---------------- */
+function renderQuiz(){
+  const view = document.getElementById("view");
+
+  if(!quizState){
+    view.innerHTML = `
+      <div class="quiz-wrap" style="text-align:center;">
+        <p class="hint" style="margin-bottom:24px;">Choose a difficulty to begin a 10-question round</p>
+        <div>
+          ${DIFFICULTIES.map(d => `
+            <button class="diff-card" data-key="${d.key}">
+              <div class="diff-top">
+                <span class="diff-title">${d.label}</span>
+                <span class="diff-count">${d.count}</span>
+              </div>
+              <div class="diff-desc">${d.desc}</div>
+            </button>
+          `).join("")}
+        </div>
+      </div>
+    `;
+    document.querySelectorAll(".diff-card").forEach(el => {
+      el.addEventListener("click", () => startQuiz(el.dataset.key));
+    });
+    return;
+  }
+
+  const {round, score, streak, best} = quizState;
+
+  if(round >= TOTAL_Q){
+    const pct = Math.round((score/TOTAL_Q)*100);
+    view.innerHTML = `
+      <div class="quiz-wrap" style="text-align:center;">
+        <div class="result-panel">
+          <div class="result-label">Round complete</div>
+          <div class="result-score">${score}/${TOTAL_Q}</div>
+          <div class="result-sub">${pct}% &middot; best streak ${best}</div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-primary" id="play-again">Play again</button>
+          <button class="btn-secondary" id="change-diff">Change difficulty</button>
+        </div>
+      </div>
+    `;
+    document.getElementById("play-again").addEventListener("click", () => startQuiz(quizState.diffKey));
+    document.getElementById("change-diff").addEventListener("click", () => { quizState = null; renderQuiz(); });
+    return;
+  }
+
+  const q = quizState.question;
+  const selected = quizState.selected;
+
+  const optionsHtml = q.options.map(opt => {
+    let cls = "option";
+    if(selected){
+      if(opt.code === q.answer.code) cls += " correct";
+      else if(opt.code === selected) cls += " wrong";
+      else cls += " dim";
+    }
+    return `<button class="${cls}" data-code="${opt.code}" ${selected?'disabled':''}>${opt.name}</button>`;
+  }).join("");
+
+  view.innerHTML = `
+    <div class="quiz-wrap">
+      <div class="quiz-meta">
+        <span>Question ${round+1} / ${TOTAL_Q}</span>
+        <span>Score ${score} &middot; Streak ${streak}</span>
+      </div>
+      <div class="progress"><div class="progress-bar" style="width:${(round/TOTAL_Q)*100}%"></div></div>
+      <div class="flag-box">${flagInner(q.answer.code, 640, 150)}</div>
+      <div>${optionsHtml}</div>
+    </div>
+  `;
+
+  if(!selected){
+    document.querySelectorAll(".option").forEach(el => {
+      el.addEventListener("click", () => chooseAnswer(el.dataset.code));
+    });
+  }
+}
+
+function startQuiz(diffKey){
+  quizState = {
+    diffKey, question: buildQuestion(diffKey), selected: null,
+    score: 0, round: 0, streak: 0, best: 0
+  };
+  renderQuiz();
+}
+
+function chooseAnswer(code){
+  if(quizState.selected) return;
+  quizState.selected = code;
+  const correct = code === quizState.question.answer.code;
+  if(correct){
+    quizState.score += 1;
+    quizState.streak += 1;
+    quizState.best = Math.max(quizState.best, quizState.streak);
+  } else {
+    quizState.streak = 0;
+  }
+  renderQuiz();
+  setTimeout(() => {
+    quizState.round += 1;
+    if(quizState.round < TOTAL_Q){
+      quizState.question = buildQuestion(quizState.diffKey);
+      quizState.selected = null;
+    }
+    renderQuiz();
+  }, 900);
+}
+
+/* ---------------- Tabs ---------------- */
+function setMode(next){
+  mode = next;
+  document.getElementById("tab-flashcards").classList.toggle("active", mode==="flashcards");
+  document.getElementById("tab-quiz").classList.toggle("active", mode==="quiz");
+  if(mode === "flashcards") renderFlashcards(); else renderQuiz();
+}
+document.getElementById("tab-flashcards").addEventListener("click", () => setMode("flashcards"));
+document.getElementById("tab-quiz").addEventListener("click", () => setMode("quiz"));
+
+renderFlashcards();
+</script>
+</body>
+</html>
